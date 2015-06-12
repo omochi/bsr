@@ -198,6 +198,8 @@ class App:
     return vers
 
   def run(self, args):
+    p(__file__)
+    return
     if len(args) < 2:
       raise Exception('subcommand not specified')
 
