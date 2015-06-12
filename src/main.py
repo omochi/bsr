@@ -308,4 +308,12 @@ class App:
     self.vars.worktree_version = new_ver
     self.vars.save()
 
+  def run_deploy(self, args):
+    if len(args) < 1:
+      raise Exception('src path not specified')
+    if len(args) < 2:
+      raise Exception('dest path not specified')
+    rsync_args = self.rsync_args()
+    self.exec_rsync_with_confirm(rsync_args, args[0:2])
+
 App().run(sys.argv)
