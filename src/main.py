@@ -239,15 +239,19 @@ class App:
     os.mkdir('.bsr')
     write_file('.gitignore', join_lines(
       '/*',
-      '!/.bsr/config'
-    ))
+      '!/.bsr',
+      ''))
+    write_file('.bsr/.gitignore', join_lines(
+      '/*',
+      '!/config',
+      ''))
     write_json_file('.bsr/config', {
       'remote_host': remote_host,
       'remote_path': remote_path  
-    })
+      })
     write_json_file('.bsr/vars', {
       'user_name': user_name  
-    })
+      })
 
   def run_status(self, args):
     p('worktree version: {}'.format(self.vars.worktree_version))
