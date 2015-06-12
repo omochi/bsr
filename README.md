@@ -7,6 +7,12 @@ rsync based binary sharing tool
 $ curl -s https://raw.githubusercontent.com/omochi/bsr/master/installer.bash | bash 
 ```
 
+# uninstall
+
+```bash
+$ rm -rf /usr/local/bin/bsr /usr/local/lib/bsr
+```
+
 # status
 
 show your worktree version.
