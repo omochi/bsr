@@ -47,3 +47,12 @@ you need to checkout latest version before push.
 $ bsr push
 ```
 
+# deploy
+
+upload to any server.
+
+```bash
+$ bsr deploy <src-path> <remote-host>::<remote-path>
+```
+
+arguments are passed to rsync command.
