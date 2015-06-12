@@ -56,3 +56,8 @@ $ bsr deploy <src-path> <remote-host>::<remote-path>
 ```
 
 arguments are passed to rsync command.
+
+# architecture
+
+it users rsync `--link-dest` option.
+so the same file in some versions consumes disk once.
