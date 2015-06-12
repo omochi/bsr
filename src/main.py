@@ -51,7 +51,10 @@ def ask(line, default=None):
   if default != None:
     line = '{} ({})'.format(line, default)
   p(line + ': ', newline=False)
-  return raw_input()
+  res = raw_input()
+  if res == '' and default != None:
+    res = default
+  return res
 
 class AppConfig:
   def __init__(self, path):
