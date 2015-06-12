@@ -13,6 +13,25 @@ $ curl -s https://raw.githubusercontent.com/omochi/bsr/master/installer.bash | b
 $ rm -rf /usr/local/bin/bsr /usr/local/lib/bsr
 ```
 
+# using
+
+- make repository directory in server.
+
+```bash
+$ ssh <remote-host>
+$ mkdir <remote-path>
+```
+
+- make local worktree.
+
+```bash
+$ mkdir <local-path>
+$ cd <local-path>
+$ bsr init
+```
+
+- now you can use bsr subcommands.
+
 # status
 
 show your worktree version.
