@@ -243,6 +243,7 @@ class App:
       ''))
     write_file('.bsr/.gitignore', join_lines(
       '/*',
+      '!/.gitignore',
       '!/config',
       ''))
     write_json_file('.bsr/config', {
