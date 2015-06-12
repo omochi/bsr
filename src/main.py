@@ -8,6 +8,16 @@ import subprocess
 import getpass
 from pprint import pprint
 
+def trace_links(path):
+  path = os.path.abspath(path)
+  while os.path.islink(path):
+    link = os.readlink(path)
+    if os.path.isabs(link):
+      path = link
+    else:
+      path = os.path.join(os.path.dirname(path), link)
+  return path
+
 def read_file(path):
   with open(path) as f:
     return f.read()
@@ -198,8 +208,8 @@ class App:
     return vers
 
   def run(self, args):
-    p(__file__)
-    return
+    self.app_path = os.path.dirname(os.path.dirname(trace_links(__file__)))
+
     if len(args) < 2:
       raise Exception('subcommand not specified')
 
