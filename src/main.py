@@ -7,6 +7,7 @@ import json
 import subprocess
 import getpass
 from pprint import pprint
+import argparse
 
 def trace_links(path):
   path = os.path.abspath(path)
@@ -148,17 +149,18 @@ class App:
       raise Exception('return code is {}'.format(rc))
     return out
 
-  def exec_rsync_with_confirm(self, args, dir_args):
-    cmd = ['rsync'] + args + ['--dry-run'] + dir_args
-    p('====[rsync dry run]====')
-    p(str(cmd))
-    p('====[result]====')
-    subprocess.check_call(cmd)
-    p('========')
+  def exec_rsync(self, args, dir_args, doConfirm):
+    if doConfirm:
+      cmd = ['rsync'] + args + ['--dry-run'] + dir_args
+      p('====[rsync dry run]====')
+      p(str(cmd))
+      p('====[result]====')
+      subprocess.check_call(cmd)
+      p('========')
 
-    yn = ask('are you sure to continue? [y/n]')
-    if yn != 'y':
-      raise Exception('cancelled')
+      yn = ask('are you sure to continue? [y/n]')
+      if yn != 'y':
+        raise Exception('cancelled')
 
     cmd = ['rsync'] + args + dir_args
     p('====[rsync run]====')
@@ -266,20 +268,30 @@ class App:
       p(v)
 
   def run_checkout(self, args):
+    argparser = argparse.ArgumentParser(prog='bsr checkout')
+    argparser.add_argument(
+      '-f', '--force', action='store_true',
+      help='suppress confirmation prompt'
+    )
+    argparser.add_argument(
+      'ver_key', nargs='?', default=None,
+      help='checkout version number or name'
+    )
+    params = argparser.parse_args(args)
+
     vers = self.fetch_versions()
     if len(vers) == 0:
       raise Exception('there are no versions')
-    if len(args) >= 1:
-      ver_key = args[0]
-      ver = self.find_version(vers, ver_key)
+    if params.ver_key != None:
+      ver = self.find_version(vers, params.ver_key)
       if ver == None:
-        raise Exception('version {} not found'.format(ver_key))
+        raise Exception('version {} not found'.format(params.ver_key))
     else:
       ver = vers[-1]
 
-    self.exec_rsync_with_confirm(self.rsync_args(),[
+    self.exec_rsync(self.rsync_args(), [
       self.rsync_ver_path(ver) + '/', '.'
-    ])
+    ], not params.force)
     self.vars.worktree_version = ver
     self.vars.save()
 
@@ -303,9 +315,9 @@ class App:
         '--link-dest=../{}'.format(latest_ver)
       ]
 
-    self.exec_rsync_with_confirm(rsync_args, [
+    self.exec_rsync(rsync_args, [
       './', self.rsync_ver_path(new_ver)
-    ])
+    ], True)
     self.vars.worktree_version = new_ver
     self.vars.save()
 
@@ -315,6 +327,6 @@ class App:
     if len(args) < 2:
       raise Exception('dest path not specified')
     rsync_args = self.rsync_args()
-    self.exec_rsync_with_confirm(rsync_args, args[0:2])
+    self.exec_rsync(rsync_args, args[0:2], True)
 
 App().run(sys.argv)
