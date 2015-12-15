@@ -57,6 +57,12 @@ def ask(line, default=None):
     res = default
   return res
 
+def escape_shell_arg(arg):
+  return '"' + arg.replace('"', '\\"') + '"'
+
+def make_shell_command(cmd):
+  return ' '.join(map(escape_shell_arg, cmd))
+
 class AppConfig:
   def __init__(self, path):
     self.path = path
@@ -123,16 +129,30 @@ class App:
       return self.vars.user_name
     return getpass.getuser()    
 
+  def vers_dir_name(self):
+    return 'bsr_vers'
+
+  def snapshot_dir_name(self):
+    return 'bsr_snapshot'
+
   def remote_vers_dir_path(self):
-    return os.path.join(self.config.remote_path, 'vers')
+    return os.path.join(self.config.remote_path, self.vers_dir_name())
 
   def remote_ver_path(self, version_name):   
     return os.path.join(self.remote_vers_dir_path(), version_name)
+
+  def remote_snapshot_dir_path(self):
+    return os.path.join(self.config.remote_path, self.snapshot_dir_name())
 
   def rsync_ver_path(self, version_name):
     return '{}:{}'.format(
       self.config.remote_host,
       self.remote_ver_path(version_name))
+
+  def rsync_snapshot_path(self):
+    return '{}:{}'.format(
+      self.config.remote_host,
+      self.remote_snapshot_dir_path())
 
   def exec_script_in_remote(self, script):
     script = join_lines(
@@ -148,6 +168,12 @@ class App:
     if rc != 0:
       raise Exception('return code is {}'.format(rc))
     return out
+
+  def exec_rsync_in_remote(self, args, dir_args):
+    cmd = ['rsync'] + args + dir_args
+    self.exec_script_in_remote(join_lines(
+      make_shell_command(cmd)
+      ))
 
   def exec_rsync(self, args, dir_args, doConfirm):
     if doConfirm:
@@ -181,7 +207,7 @@ class App:
 
   def make_version_name(self, code):
     date_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    return '{:03d}_{}_{}'.format(code, date_str, self.user_name())
+    return '{:04d}_{}_{}'.format(code, date_str, self.user_name())
 
   def compare_versions(self, a, b):
     va = self.get_version_code(a)
@@ -202,8 +228,8 @@ class App:
 
   def fetch_versions(self):
     out = self.exec_script_in_remote(join_lines( 
-      'if [[ ! -d vers ]] ; then exit ; fi',
-      'ls vers'
+      'if [[ ! -d {} ]] ; then exit ; fi'.format(self.vers_dir_name()),
+      'ls {}'.format(self.vers_dir_name())
     ))
     out_lines = out.split('\n')
     def out_lines_filter(x):
@@ -305,19 +331,40 @@ class App:
     else:
       new_ver = self.make_version_name(0)
       latest_ver = None
-      self.exec_script_in_remote('\n'.join([
-        'mkdir -p "{}"'.format(self.remote_vers_dir_path())
-      ]))
+      self.exec_script_in_remote(join_lines(
+        'mkdir -p "{}"'.format(self.remote_vers_dir_path()),
+        'mkdir -p "{}"'.format(self.remote_snapshot_dir_path())
+      ))
+
+    # rsync_args = self.rsync_args()
+    # if latest_ver != None:
+    #   rsync_args += [
+    #     '--link-dest=../{}'.format(latest_ver)
+    #   ]
+
+    # self.exec_rsync(rsync_args, [
+    #   './', self.rsync_ver_path(new_ver)
+    # ], True)
 
     rsync_args = self.rsync_args()
-    if latest_ver != None:
+    self.exec_rsync(rsync_args, [
+      './', self.rsync_snapshot_path()
+    ], True)
+
+    rsync_args = self.rsync_args()
+    if latest_ver == None:
+      rsync_args += [
+        '--link-dest=../../{}'.format(self.snapshot_dir_name())
+      ]
+    else:
       rsync_args += [
         '--link-dest=../{}'.format(latest_ver)
       ]
+    self.exec_rsync_in_remote(rsync_args, [
+      self.remote_snapshot_dir_path() + '/',
+      self.remote_ver_path(new_ver)
+      ])
 
-    self.exec_rsync(rsync_args, [
-      './', self.rsync_ver_path(new_ver)
-    ], True)
     self.vars.worktree_version = new_ver
     self.vars.save()
 
