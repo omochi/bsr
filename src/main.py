@@ -336,16 +336,6 @@ class App:
         'mkdir -p "{}"'.format(self.remote_snapshot_dir_path())
       ))
 
-    # rsync_args = self.rsync_args()
-    # if latest_ver != None:
-    #   rsync_args += [
-    #     '--link-dest=../{}'.format(latest_ver)
-    #   ]
-
-    # self.exec_rsync(rsync_args, [
-    #   './', self.rsync_ver_path(new_ver)
-    # ], True)
-
     rsync_args = self.rsync_args()
     self.exec_rsync(rsync_args, [
       './', self.rsync_snapshot_path()
